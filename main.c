@@ -31,9 +31,11 @@
 #define LOOP        while(1)
 #define BAUDRATE_REG    (CLOCK/(long)(64UL*BAUDRATE))-1
 #define RESET_CHIP  __asm__ volatile ("reset");
+#define INDEX_FAIL_COUNT_EEPROM    8
 
 /*Global variables */
 unsigned char rxCh ;
+unsigned char failResetCount = 0;
 
 /* Function prototypes */
 void setup(void);
@@ -55,7 +57,9 @@ void main(void)
 
     }
 
-    // Reset the chip if it reaches here
+    // Log fail reset and Reset the chip if it reaches here 
+    failResetCount++;
+    eeprom_write(INDEX_FAIL_COUNT_EEPROM, failResetCount);
     RESET_CHIP;
 }
 
@@ -64,8 +68,13 @@ void main(void)
  */
 void setup(void)
 {
+   
    unsigned char ch = 0x00;
    unsigned char index = 0x00;
+    
+
+    /* Read failure count from the EEPROM */
+    failResetCount = eeprom_read(INDEX_FAIL_COUNT_EEPROM);
 
     TRISC = 0b10000000;
     TXSTA = (1<<5);
